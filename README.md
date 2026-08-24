@@ -68,11 +68,13 @@ Additional components:
 ├── datasource
 ├── di
 ├── domain
+├── manual-test-UI
 ├── migrations
 ├── web
 ├── docker-compose.yml
 ├── go.mod
-└── go.sum
+├── go.sum
+└── Makefile
 ```
 
 ## API
@@ -153,19 +155,19 @@ Do not commit real secrets to the repository.
 ### 2. Start PostgreSQL
 
 ```bash
-docker compose up -d
+make db-up
 ```
 
 ### 3. Apply migrations
 
 ```bash
-goose up
+make migrate-up
 ```
 
 ### 4. Start the backend
 
 ```bash
-go run ./cmd
+make run
 ```
 
 ## Testing
@@ -173,7 +175,7 @@ go run ./cmd
 Run all tests with:
 
 ```bash
-go test ./...
+make test
 ```
 
 The test suite covers game logic, user services, and PostgreSQL repositories.
@@ -196,7 +198,7 @@ It supports:
 Start the backend first, then run the UI:
 
 ```bash
-python3 server.py
+make ui
 ```
 
 Open:
