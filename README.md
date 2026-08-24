@@ -68,7 +68,7 @@ Additional components:
 ├── datasource
 ├── di
 ├── domain
-├── manual-test-UI
+├── manual-test-ui
 ├── migrations
 ├── web
 ├── docker-compose.yml
