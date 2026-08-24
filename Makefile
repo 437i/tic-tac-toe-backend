@@ -4,6 +4,7 @@ run:
 	go run ./cmd
 
 build:
+	mkdir -p bin
 	go build -o bin/tic-tac-toe ./cmd
 
 test:
