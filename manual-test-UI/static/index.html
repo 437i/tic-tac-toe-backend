@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Go Tic-Tac-Toe Test UI</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #101218; color: #e8eaf0; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; border: 1px solid #343845; background: #1b1f29; color: #f4f5f8; border-radius: 8px; padding: 8px 12px; }
+    button:hover { background: #242936; }
+    button.primary { background: #4f46e5; border-color: #6366f1; }
+    button.primary:hover { background: #4338ca; }
+    button.danger { background: #7f1d1d; border-color: #991b1b; }
+    input, select { width: 100%; background: #151923; color: #e8eaf0; border: 1px solid #343845; border-radius: 8px; padding: 9px 10px; }
+    label { font-size: 12px; color: #9aa0ad; display: block; margin-bottom: 5px; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .app { min-height: 100vh; padding: 18px; }
+    .top { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    h1 { margin: 0; font-size: 22px; }
+    .muted { color: #9aa0ad; }
+    .grid { display: grid; grid-template-columns: 310px minmax(320px, 430px) minmax(420px, 1fr); gap: 14px; align-items: start; }
+    .card { background: #171a22; border: 1px solid #2a2e39; border-radius: 12px; padding: 14px; }
+    .card + .card { margin-top: 14px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .stack > * + * { margin-top: 10px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    .status strong { color: #e8eaf0; }
+    .pill { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #252a36; color: #cbd0dc; font-size: 12px; }
+    .status { padding: 10px; background: #11141b; border: 1px solid #2c313d; border-radius: 8px; min-height: 44px; }
+    .game-status-card { margin: 12px 0 14px; padding: 16px 18px; border-radius: 12px; border: 1px solid #3a4050; background: #121620; }
+    .game-status-card.active { border-color: #4f46e5; background: #171a2a; }
+    .game-status-card.waiting { border-color: #8a6d1d; background: #1c1910; }
+    .game-status-card.won { border-color: #2f8a57; background: #102016; }
+    .game-status-card.lost { border-color: #983e46; background: #241315; }
+    .game-status-card.draw { border-color: #657080; background: #171b22; }
+    .game-status-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #9aa0ad; }
+    .game-status-main { margin-top: 3px; font-size: 22px; line-height: 1.25; font-weight: 800; }
+    .game-status-detail { margin-top: 6px; color: #aeb5c3; font-size: 12px; }
+    .game-status-main.your-turn { color: #b9b6ff; }
+    .game-status-main.opponent-turn { color: #d2d7e0; }
+    .game-status-main.result { color: #f4f5f8; }
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; width: min(390px, 100%); aspect-ratio: 1; margin: 14px auto; }
+    .cell { border-radius: 12px; border: 1px solid #3b4150; background: #1c202a; display: grid; place-items: center; font-size: clamp(38px, 7vw, 68px); font-weight: 750; line-height: 1; }
+    .cell:hover { background: #242936; }
+    .cell.disabled { cursor: default; opacity: .85; }
+    .x { color: #8ab4ff; }
+    .o { color: #ff9b9b; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .panel-title h2 { margin: 0; font-size: 15px; }
+    .game-list { display: grid; gap: 8px; max-height: 220px; overflow: auto; }
+    .game-item { text-align: left; padding: 9px; background: #12151c; border: 1px solid #2d323e; border-radius: 8px; }
+    .game-item small { display: block; color: #9097a6; margin-top: 3px; }
+    .leaderboard { display: grid; gap: 6px; max-height: 340px; overflow: auto; }
+    .leader-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) 96px; gap: 8px; align-items: center; padding: 8px 10px; background: #12151c; border: 1px solid #2d323e; border-radius: 8px; }
+    .leader-rank { color: #8f96a6; font-variant-numeric: tabular-nums; }
+    .leader-login { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .leader-winrate { text-align: right; font-variant-numeric: tabular-nums; }
+    .log { max-height: calc(100vh - 150px); overflow: auto; display: grid; gap: 9px; }
+    .entry { border: 1px solid #2d323e; border-radius: 8px; background: #11141a; }
+    .entry-head { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #272c37; font-size: 12px; }
+    .entry-body { padding: 9px; }
+    .entry pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; color: #cbd0dc; }
+    .ok { color: #78d99a; } .err { color: #ff8e8e; }
+    .small { font-size: 12px; }
+    .nowrap { white-space: nowrap; }
+    .checkbox { display: flex; align-items: center; gap: 7px; color: #c5cad5; font-size: 12px; }
+    .checkbox input { width: auto; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: 300px minmax(320px, 1fr); } .log-card { grid-column: 1 / -1; } .log { max-height: 360px; } }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .log-card { grid-column: auto; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div>
+      <h1>Go Tic-Tac-Toe — Manual Test UI</h1>
+      <div class="muted small">Frontend talks to <code>/api/*</code> → local Go API.</div>
+    </div>
+    <div class="actions">
+      <span id="authPill" class="pill">not authenticated</span>
+      <button id="clearBtn">Clear log</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <aside>
+      <section class="card stack">
+        <div class="panel-title"><h2>Account</h2><span id="userLogin" class="pill">—</span></div>
+        <div><label>Login</label><input id="login" placeholder="player_a" autocomplete="username" /></div>
+        <div><label>Password</label><input id="password" type="password" placeholder="password" autocomplete="current-password" /></div>
+        <div class="actions">
+          <button class="primary" id="signupBtn">Sign up</button>
+          <button id="loginBtn">Login</button>
+          <button id="meBtn">GET /user/me</button>
+        </div>
+        <div><label>Access token</label><input id="accessToken" readonly /></div>
+        <div><label>Refresh token</label><input id="refreshToken" readonly /></div>
+        <div class="actions">
+          <button id="refreshAccessBtn">Refresh access</button>
+          <button id="rotateRefreshBtn">Rotate refresh</button>
+          <button class="danger" id="logoutBtn">Logout</button>
+        </div>
+      </section>
+
+      <section class="card stack">
+        <div class="panel-title"><h2>Create game</h2></div>
+        <div class="row">
+          <div><label>Role</label><select id="role"><option>X</option><option>O</option></select></div>
+          <div><label>Mode</label><select id="mode"><option>PvE</option><option>PvP</option></select></div>
+        </div>
+        <button class="primary" id="createBtn">POST /game</button>
+      </section>
+
+      <section class="card stack">
+        <div class="panel-title"><h2>Games</h2><div class="actions"><button id="availableBtn">Available</button><button id="historyBtn">History</button></div></div>
+        <div id="gameList" class="game-list"><span class="muted small">No list loaded.</span></div>
+      </section>
+
+      <section class="card stack">
+        <div class="panel-title"><h2>Game ID</h2></div>
+        <input id="gameId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+        <div class="actions">
+          <button id="getBtn">GET game</button>
+          <button id="joinBtn">JOIN game</button>
+        </div>
+      </section>
+
+      <section class="card stack">
+        <div class="panel-title"><h2>User lookup</h2><span class="muted small">GET /user/{id}</span></div>
+        <input id="userId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+        <button id="getUserBtn">Find user</button>
+        <div id="userResult" class="status muted small">No user loaded.</div>
+      </section>
+
+      <section class="card stack">
+        <div class="panel-title"><h2>Leaderboard</h2><span class="muted small">GET /leaderboard</span></div>
+        <div class="row">
+          <button id="leaderBtn">Load leaderboard</button>
+          <input id="leaderLimit" type="number" min="1" max="100" value="10" />
+        </div>
+        <div id="leaderboard" class="leaderboard"><span class="muted small">Leaderboard not loaded.</span></div>
+      </section>
+    </aside>
+
+    <main class="card">
+      <div class="panel-title">
+        <h2>Game</h2>
+        <div class="actions">
+          <span id="gameMode" class="pill">—</span>
+          <span id="gameStatus" class="pill">—</span>
+          <label class="checkbox"><input id="polling" type="checkbox" checked /> auto refresh PvP</label>
+        </div>
+      </div>
+      <div id="gameMeta" class="status">No game loaded.</div>
+      <div id="gameStatusCard" class="game-status-card">
+        <div class="game-status-label">Game status</div>
+        <div id="gameStatusMain" class="game-status-main">No game loaded</div>
+        <div id="gameStatusDetail" class="game-status-detail">Load or create a game to see its current state.</div>
+      </div>
+      <div id="board" class="board"></div>
+      <div class="actions">
+        <button id="reloadBtn">Reload game</button>
+        <button id="copyGameBtn">Copy game ID</button>
+      </div>
+      <div style="margin-top:12px" class="muted small">Click an empty cell to send <code>POST /game/{id}</code>. The exact request and response appear in the log.</div>
+    </main>
+
+    <section class="card log-card">
+      <div class="panel-title"><h2>HTTP log</h2><span id="logCount" class="pill">0</span></div>
+      <div id="log" class="log"></div>
+    </section>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { game: null, me: null, pollTimer: null, pollingBusy: false };
+
+function saveTokens(access, refresh) {
+  sessionStorage.setItem('accessToken', access || '');
+  sessionStorage.setItem('refreshToken', refresh || '');
+  $('accessToken').value = access || '';
+  $('refreshToken').value = refresh || '';
+  $('authPill').textContent = access ? 'authenticated' : 'not authenticated';
+}
+function loadSession() {
+  const access = sessionStorage.getItem('accessToken') || '';
+  const refresh = sessionStorage.getItem('refreshToken') || '';
+  const login = sessionStorage.getItem('login') || '';
+  $('accessToken').value = access; $('refreshToken').value = refresh; $('login').value = login;
+  $('userLogin').textContent = login || '—';
+  $('authPill').textContent = access ? 'authenticated' : 'not authenticated';
+}
+function pretty(v) { try { return JSON.stringify(v, null, 2); } catch { return String(v); } }
+function logEntry({method, path, status, elapsed, request, response}) {
+  const node = document.createElement('div'); node.className = 'entry';
+  const ok = status >= 200 && status < 300;
+  node.innerHTML = `<div class="entry-head"><span><strong>${method}</strong> ${path}</span><span class="${ok ? 'ok' : 'err'}">${status} · ${elapsed} ms</span></div>`;
+  const body = document.createElement('div'); body.className = 'entry-body';
+  body.innerHTML = `<div class="muted small">Request</div><pre>${escapeHtml(pretty(request))}</pre><div class="muted small" style="margin-top:8px">Response</div><pre>${escapeHtml(pretty(response))}</pre>`;
+  node.appendChild(body); $('log').prepend(node); $('logCount').textContent = String($('log').children.length);
+}
+function escapeHtml(s) { return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+async function api(method, path, body=null, options={}) {
+  const headers = {'Accept':'application/json'};
+  const access = sessionStorage.getItem('accessToken') || '';
+  if (access && !options.noAuth) headers['Authorization'] = `Bearer ${access}`;
+  if (body !== null) headers['Content-Type'] = 'application/json';
+  const started = performance.now();
+  let response, data;
+  try {
+    response = await fetch('/api' + path, {method, headers, body: body === null ? undefined : JSON.stringify(body)});
+    const text = await response.text();
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  } catch (err) {
+    logEntry({method, path, status: 0, elapsed: Math.round(performance.now()-started), request: body, response: {networkError: String(err)}});
+    throw err;
+  }
+  logEntry({method, path, status: response.status, elapsed: Math.round(performance.now()-started), request: body, response: data});
+  if (!response.ok) throw new Error(data?.error || `${response.status} ${response.statusText}`);
+  return data;
+}
+
+function requireAuth() {
+  if (!sessionStorage.getItem('accessToken')) throw new Error('Login first');
+}
+function showGame(game) {
+  state.game = game;
+  if (game?.game_id) $('gameId').value = game.game_id;
+  $('gameMode').textContent = game?.mode || '—';
+  $('gameStatus').textContent = game?.status || '—';
+  $('gameMeta').innerHTML = game ? `<div><strong>Game:</strong> ${escapeHtml(String(game.game_id))}</div><div class="small muted" style="margin-top:4px"><strong>X:</strong> ${escapeHtml(String(game.player_x ?? ''))} &nbsp; <strong>O:</strong> ${escapeHtml(String(game.player_o ?? ''))}</div>` : 'No game loaded.';
+
+  const card = $('gameStatusCard');
+  const main = $('gameStatusMain');
+  const detail = $('gameStatusDetail');
+  card.className = 'game-status-card';
+  main.className = 'game-status-main';
+
+  if (!game) {
+    main.textContent = 'No game loaded';
+    detail.textContent = 'Create a game or load one by ID.';
+  } else {
+    const status = String(game.status || '').toLowerCase();
+    const me = state.me?.user_id ? String(state.me.user_id).toLowerCase() : '';
+    const px = String(game.player_x || '').toLowerCase();
+    const po = String(game.player_o || '').toLowerCase();
+    const amX = !!me && me === px;
+    const amO = !!me && me === po;
+    let title = game.status || 'Unknown status';
+    let detailText = '';
+    let tone = '';
+
+    if (status === 'waiting for opponent') {
+      title = 'Waiting for opponent';
+      detailText = game.mode === 'PvP' ? 'Share the game ID and have another player join.' : 'The game is waiting for its opponent.';
+      tone = 'waiting';
+    } else if (status === 'draw') {
+      title = 'Draw';
+      detailText = 'The board is full and neither side won.';
+      tone = 'draw';
+      main.classList.add('result');
+    } else if (status === 'ai won') {
+      title = 'AI won';
+      detailText = 'The game is over.';
+      tone = 'lost';
+      main.classList.add('result');
+    } else if (status.includes(' won')) {
+      const winnerId = status.replace(/^player\s+/, '').replace(/\s+won$/, '');
+      const winnerIsMe = !!me && winnerId === me;
+      title = winnerIsMe ? 'You won' : 'Opponent won';
+      detailText = `Winner: ${winnerId}`;
+      tone = winnerIsMe ? 'won' : 'lost';
+      main.classList.add('result');
+    } else if (status.includes(' turn')) {
+      const turnId = status.replace(/^player\s+/, '').replace(/\s+turn$/, '');
+      const yourTurn = !!me && turnId === me;
+      title = yourTurn ? 'Your turn' : 'Opponent turn';
+      detailText = `Playing as ${yourTurn ? (amX ? 'X' : amO ? 'O' : 'player') : (turnId === px ? 'X' : turnId === po ? 'O' : 'opponent')}`;
+      tone = 'active';
+      main.classList.add(yourTurn ? 'your-turn' : 'opponent-turn');
+    } else {
+      detailText = `Backend status: ${game.status || 'unknown'}`;
+    }
+    card.classList.add(tone);
+    main.textContent = title;
+    detail.textContent = detailText;
+  }
+
+  const field = game?.field || [[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']];
+  $('board').innerHTML = '';
+  field.forEach((row, i) => row.forEach((cell, j) => {
+    const b = document.createElement('button'); b.className = 'cell' + (cell === 'X' ? ' x' : cell === 'O' ? ' o' : '');
+    b.textContent = cell === ' ' ? '' : cell;
+    if (cell !== ' ') b.classList.add('disabled');
+    b.addEventListener('click', () => makeMove(i,j)); $('board').appendChild(b);
+  }));
+}
+function emptyFieldFrom(game) { return game?.field?.map(row => row.slice()) || [[' ',' ',' '],[' ',' ',' ']]; }
+function canMove() {
+  return !!state.game && state.game.field?.some(r => r.some(c => c === ' '));
+}
+async function makeMove(i,j) {
+  try {
+    requireAuth(); if (!state.game) throw new Error('Load a game first');
+    if (state.game.field[i][j] !== ' ') return;
+    if (!state.me) await me(true);
+    const userId = state.me?.user_id || '';
+    const status = String(state.game.status || '');
+    let mySign = null;
+    if (String(state.game.player_x) === userId) mySign = 'X';
+    if (String(state.game.player_o) === userId) mySign = 'O';
+    if (!mySign) throw new Error('You are not a player in this game');
+    if (!status.toLowerCase().includes(userId.toLowerCase())) throw new Error('It is not your turn');
+    const field = state.game.field.map(r => r.slice());
+    field[i][j] = mySign;
+    const gameId = state.game.game_id;
+    const result = await api('POST', `/game/${gameId}`, {field});
+    showGame({...result, game_id: gameId, mode: state.game.mode});
+  } catch (err) { alert(err.message); }
+}
+
+async function signup() {
+  try { await api('POST','/signup',{login:$('login').value,password:$('password').value},{noAuth:true}); alert('Signup successful'); }
+  catch (e) { alert(e.message); }
+}
+async function login() {
+  try {
+    const r = await api('POST','/login',{login:$('login').value,password:$('password').value},{noAuth:true});
+    saveTokens(r.accessToken, r.refreshToken); sessionStorage.setItem('login',$('login').value); $('userLogin').textContent=$('login').value; await me(true);
+  } catch (e) { alert(e.message); }
+}
+async function me(silent=false) { try { const r = await api('GET','/user/me'); state.me = r; $('userLogin').textContent = r.login || $('login').value; return r; } catch(e){ if(!silent) alert(e.message); throw e; } }
+async function refreshAccess() {
+  try { const r = await api('POST','/refresh/access',{refreshToken:sessionStorage.getItem('refreshToken')||''},{noAuth:true}); saveTokens(r.accessToken, r.refreshToken); }
+  catch(e){alert(e.message);}
+}
+async function rotateRefresh() {
+  try { const r = await api('POST','/refresh/refresh',{refreshToken:sessionStorage.getItem('refreshToken')||''},{noAuth:true}); saveTokens(r.accessToken, r.refreshToken); }
+  catch(e){alert(e.message);}
+}
+async function createGame() {
+  try { const r = await api('POST','/game',{role:$('role').value,mode:$('mode').value}); showGame(r); }
+  catch(e){alert(e.message);}
+}
+async function getGame(silent=false) {
+  try { requireAuth(); const id=$('gameId').value.trim(); if(!id) throw new Error('Game ID is empty'); const r=await api('GET',`/game/${id}`); showGame(r); }
+  catch(e){ if(!silent) alert(e.message); }
+}
+async function joinGame() {
+  try { const id=$('gameId').value.trim(); if(!id) throw new Error('Game ID is empty'); await api('POST',`/game/${id}/join`); await getGame(true); }
+  catch(e){alert(e.message);}
+}
+async function listGames(type) {
+  try {
+    const r = await api('GET', type === 'available' ? '/game/available' : '/game/history');
+    $('gameList').innerHTML='';
+    if (!r.length) { $('gameList').innerHTML='<span class="muted small">No games.</span>'; return; }
+    r.forEach(g => { const b=document.createElement('button'); b.className='game-item'; b.innerHTML=`<strong>${g.game_id}</strong><small>${g.status} · X: ${g.player_x} · O: ${g.player_o}<br>${g.created_at}</small>`; b.addEventListener('click',()=>{ $('gameId').value=g.game_id; getGame(); }); $('gameList').appendChild(b); });
+  } catch(e){alert(e.message);}
+}
+async function getUser() {
+  try {
+    requireAuth();
+    const id = $('userId').value.trim();
+    if (!id) throw new Error('User ID is empty');
+    const r = await api('GET', `/user/${id}`);
+    $('userResult').className = 'status';
+    $('userResult').innerHTML = `<div><strong>Login:</strong> ${escapeHtml(String(r.login ?? ''))}</div><div class="muted small" style="margin-top:4px"><strong>User ID:</strong> ${escapeHtml(id)}</div>`;
+  } catch(e) { alert(e.message); }
+}
+async function leaderboard() {
+  try {
+    const n = Math.max(1, Math.min(100, Number($('leaderLimit').value) || 10));
+    const rows = await api('GET', `/leaderboard?limit=${n}`);
+    const root = $('leaderboard');
+    root.innerHTML = '';
+    if (!Array.isArray(rows) || rows.length === 0) {
+      root.innerHTML = '<span class="muted small">No leaderboard entries.</span>';
+      return;
+    }
+    rows.forEach((leader, index) => {
+      const row = document.createElement('div');
+      row.className = 'leader-row';
+      const winrate = Number(leader.winrate);
+      const winrateText = Number.isFinite(winrate) ? winrate.toFixed(2) : String(leader.winrate ?? '—');
+      row.innerHTML = `<span class="leader-rank">${index + 1}</span><span class="leader-login"><strong>${escapeHtml(String(leader.login ?? ''))}</strong><span class="muted small" style="display:block;margin-top:2px">${escapeHtml(String(leader.user_id ?? ''))}</span></span><span class="leader-winrate">${escapeHtml(winrateText)}</span>`;
+      row.title = 'Click to look up this user';
+      row.addEventListener('click', () => { $('userId').value = String(leader.user_id ?? ''); getUser(); });
+      root.appendChild(row);
+    });
+  } catch(e) { alert(e.message); }
+}
+
+$('signupBtn').onclick=signup; $('loginBtn').onclick=login; $('meBtn').onclick=me; $('getUserBtn').onclick=getUser; $('refreshAccessBtn').onclick=refreshAccess; $('rotateRefreshBtn').onclick=rotateRefresh; $('createBtn').onclick=createGame; $('availableBtn').onclick=()=>listGames('available'); $('historyBtn').onclick=()=>listGames('history'); $('getBtn').onclick=()=>getGame(false); $('joinBtn').onclick=joinGame; $('leaderBtn').onclick=leaderboard; $('reloadBtn').onclick=()=>getGame(false); $('clearBtn').onclick=()=>{ $('log').innerHTML=''; $('logCount').textContent='0'; };
+$('copyGameBtn').onclick=async()=>{ try { await navigator.clipboard.writeText($('gameId').value); } catch {} };
+$('logoutBtn').onclick=()=>{ sessionStorage.clear(); loadSession(); state.game=null; showGame(null); };
+$('polling').addEventListener('change', startPolling);
+function startPolling() { if (state.pollTimer) clearInterval(state.pollTimer); if ($('polling').checked) state.pollTimer=setInterval(async()=>{ if(state.game?.mode==='PvP' && state.game?.game_id && !state.pollingBusy){ state.pollingBusy=true; await getGame(true); state.pollingBusy=false; } }, 1200); }
+loadSession(); showGame(null); startPolling();
+</script>
+</body>
+</html>
